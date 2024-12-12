@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirm Send</title>
+    <!-- Include the nonce in the script tag for external scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" nonce="{{ nonce }}"></script>
+</head>
+<body>
+    <h1>Confirm Send</h1>
+    <p>Are you sure you want to proceed?</p>
+
+    <!-- Form for creating the campaign -->
+    <form id="createCampaignForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit">Create Campaign</button>
+    </form>
+
+    <!-- Form for sending the campaign -->
+    <form method="POST" onsubmit="return confirm('Are you sure you want to send the campaign?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" name="action" value="send_campaign">Send Campaign</button>
+    </form>
+
+    <button type="button" onclick="window.history.back()">Cancel</button>
+
+    <!-- Include the nonce in the inline script -->
+    <script nonce="{{ nonce }}">
+        $(document).ready(function() {
+            $('#createCampaignForm').submit(function(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                // Send an AJAX POST request
+                $.ajax({
+                    url: window.location.href,
+                    type: 'POST',
+                    data: {
+                        action: 'create_campaign',
+                        csrf_token: $('input[name="csrf_token"]').val()
+                    },
+                    success: function(response) {
+                        // Handle success - display a message
+                        alert(response.message);
+                    },
+                    error: function(xhr) {
+                        // Handle error - display an error message
+                        alert('Error: ' + xhr.responseJSON.message);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
