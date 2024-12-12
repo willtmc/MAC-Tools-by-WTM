@@ -1,0 +1,9 @@
+.env
+dropbox_token.env
+venv/
+__pycache__/
+*.pyc
+tmp/
+*.db
+*.log
+.DS_Store
