@@ -24,18 +24,22 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
+                    <!-- Link to neighbor letters home -->
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('neighbor_letters.home') }}">Neighbor Letters</a>
                     </li>
+                    <!-- Link to QR labels home -->
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('qr_labels_bp.home') }}">QR Labels</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
+                    <!-- Updated to call the logout route we put in app.py -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a>
+                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
                     </li>
                 </ul>
             </div>
