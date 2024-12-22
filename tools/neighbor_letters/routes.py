@@ -1,29 +1,32 @@
 """Routes for neighbor letters functionality."""
 import os
 import json
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from utils.lob_utils import LobClient, Address, LobAPIError
 
-neighbor_letters = Blueprint('neighbor_letters', __name__, url_prefix='/letters')
+neighbor_letters = Blueprint('neighbor_letters', __name__, url_prefix='/neighbor_letters')
 
 @neighbor_letters.route('/')
 def home():
     """
-    This is now the home endpoint, so url_for('neighbor_letters.home') will work.
+    This is the home endpoint for neighbor letters.
     """
     return render_template('neighbor_letters/home.html')
 
-@neighbor_letters.route('/upload', methods=['POST'])
-def upload_csv():
+@neighbor_letters.route('/process', methods=['GET', 'POST'])
+def process():
     """
-    Minimal CSV upload endpoint for demonstration.
-    Doesn't do much validation; just outputs a success message.
+    Page or endpoint for uploading CSV addresses.
+    If GET, display the page. If POST, handle the file.
     """
-    file = request.files.get('file')
-    if not file or not file.filename.endswith('.csv'):
-        return jsonify({'success': False, 'message': 'Please upload a .csv file'}), 400
-    # In a real scenario, parse CSV here.
-    return jsonify({'success': True, 'message': 'CSV uploaded successfully!'})
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if not file or not file.filename.endswith('.csv'):
+            return jsonify({'success': False, 'message': 'Please upload a .csv file'}), 400
+        # In a real scenario, parse CSV here.
+        return jsonify({'success': True, 'message': 'CSV uploaded successfully!', 'stats': {}}), 200
+    # If GET, render a page that instructs user to upload CSV
+    return render_template('neighbor_letters/letters.html')
 
 @neighbor_letters.route('/send', methods=['POST'])
 def send_letters():
@@ -58,3 +61,14 @@ def send_letters():
         return jsonify({'success': True, 'results': batch_result}), 200
     except LobAPIError as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+# Example route if you want “edit_letter” style usage:
+@neighbor_letters.route('/edit/<auction_code>', methods=['GET', 'POST'])
+def edit(auction_code):
+    """
+    Minimal example of editing a letter for a given auction_code
+    """
+    if request.method == 'POST':
+        # Save posted letter content, etc.
+        return f"Letter content saved for {auction_code}"
+    return f"Editing letter for {auction_code}"

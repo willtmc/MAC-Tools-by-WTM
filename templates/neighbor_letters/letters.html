@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Neighbor Letters{% endblock %}
+{% block title %}Upload Addresses{% endblock %}
 
 {% block content %}
-<h1 class="mclemore-title">Neighbor Letters</h1>
+<h1 class="mclemore-title">Upload Neighbor Addresses</h1>
 
 <div class="mclemore-info">
     <p>Upload a CSV file containing neighbor addresses to generate notification letters.</p>
@@ -28,26 +28,6 @@
                     </div>
                     <button type="submit" class="mclemore-btn mclemore-btn-primary mt-3">Upload</button>
                 </form>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="mclemore-card">
-            <div class="mclemore-card-header">
-                <h2 class="mclemore-subtitle mb-0">CSV Format</h2>
-            </div>
-            <div class="mclemore-card-body">
-                <p>Required columns:</p>
-                <div class="mclemore-code">Name, Address, City, State, Zip</div>
-                <div class="mclemore-info mt-3">
-                    <strong>Notes:</strong>
-                    <ul class="mb-0">
-                        <li>Names are truncated to 40 characters</li>
-                        <li>All fields are required</li>
-                        <li>Duplicates are automatically removed</li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
@@ -81,31 +61,7 @@ $(document).ready(function() {
             contentType: false,
             success: function(response) {
                 if (response.success) {
-                    // Show success message with stats
-                    var stats = response.stats;
-                    var message = `
-                        <h4>Success!</h4>
-                        <p>${response.message}</p>
-                        <ul>
-                            <li>Total Rows: ${stats.total_rows}</li>
-                            <li>Processed Rows: ${stats.processed_rows}</li>
-                            <li>Skipped Rows: ${stats.skipped_rows}</li>
-                            <li>Format Detected: ${stats.format_detected}</li>
-                            <li>Cemetery Records Skipped: ${stats.cemetery_records_skipped}</li>
-                            <li>Duplicate Rows: ${stats.duplicate_rows}</li>
-                        </ul>
-                    `;
-                    
-                    $('#results').removeClass('mclemore-error').addClass('mclemore-info')
-                        .html(message)
-                        .show();
-                    
-                    // Redirect after a short delay
-                    if (response.redirect) {
-                        setTimeout(function() {
-                            window.location.href = response.redirect;
-                        }, 2000);
-                    }
+                    $('#results').html(`<h4>Success!</h4><p>${response.message}</p>`).show();
                 } else {
                     $('#results').removeClass('mclemore-info').addClass('mclemore-error')
                         .html(`<h4>Error</h4><p>${response.message}</p>`)

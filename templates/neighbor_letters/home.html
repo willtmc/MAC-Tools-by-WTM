@@ -7,35 +7,17 @@
     <h1 class="mclemore-title">Neighbor Letters</h1>
     
     <div class="row">
-        <div class="col-md-6">
-            <div class="mclemore-card">
-                <div class="mclemore-card-header">
-                    <h4 class="mclemore-subtitle mb-0">Start New Campaign</h4>
-                </div>
-                <div class="mclemore-card-body">
-                    <form id="auctionForm" action="{{ url_for('neighbor_letters.edit_letter') }}" method="GET">
-                        <div class="mclemore-form-group">
-                            <label for="auction_code">Auction Code</label>
-                            <input type="text" class="mclemore-form-control" id="auction_code" name="auction_code" required>
-                        </div>
-                        <button type="submit" class="mclemore-btn mclemore-btn-primary">Create Letters</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
+        <div class="col-md-12">
             <div class="mclemore-card">
                 <div class="mclemore-card-header">
                     <h4 class="mclemore-subtitle mb-0">Instructions</h4>
                 </div>
                 <div class="mclemore-card-body">
                     <ol>
-                        <li>Enter an auction code to start</li>
-                        <li>Create or edit your letter template</li>
-                        <li>Upload a CSV file with neighbor addresses</li>
-                        <li>Preview the letters</li>
-                        <li>Send the letters through Lob</li>
+                        <li>Upload a CSV file with neighbor addresses (click “Upload Addresses” below).</li>
+                        <li>Create or edit your letter template (manually at /neighbor_letters/edit/AUCTIONCODE).</li>
+                        <li>Preview the letters (manually at /neighbor_letters/preview/AUCTIONCODE).</li>
+                        <li>Send the letters through Lob if desired.</li>
                     </ol>
                     <p><strong>Note:</strong> Make sure your CSV file has these columns:</p>
                     <ul>
@@ -49,15 +31,14 @@
             </div>
         </div>
     </div>
+    
+    <!-- Button linking to the letters.html page for uploading CSV -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <a href="{{ url_for('neighbor_letters.process') }}" class="mclemore-btn mclemore-btn-primary">
+                Upload Addresses
+            </a>
+        </div>
+    </div>
 </div>
-
-<script>
-document.getElementById('auctionForm').addEventListener('submit', function(e) {
-    const auctionCode = document.getElementById('auction_code').value.trim();
-    if (!auctionCode) {
-        e.preventDefault();
-        alert('Please enter an auction code');
-    }
-});
-</script>
 {% endblock %}
