@@ -3,7 +3,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import os
 from tools.neighbor_letters import neighbor_letters_bp
 from tools.qr_labels import qr_labels_bp
-from tools.label_generator import label_generator_bp
 import logging
 import pytz
 from dotenv import load_dotenv
@@ -51,7 +50,6 @@ def create_app():
     app.register_blueprint(bp)
     app.register_blueprint(neighbor_letters_bp, url_prefix='/letters')
     app.register_blueprint(qr_labels_bp, url_prefix='/labels')
-    app.register_blueprint(label_generator_bp, url_prefix='/label-generator')
     
     # Initialize APIs
     init_apis()
