@@ -181,61 +181,48 @@ def process():
         logger.error(f"Unexpected error: {str(e)}\n{traceback.format_exc()}")
         return jsonify({'success': False, 'message': f'An unexpected error occurred: {str(e)}'}), 500
 
-@neighbor_letters_bp.route('/edit/<auction_code>')
+@neighbor_letters_bp.route('/edit/<auction_code>', methods=['GET', 'POST'])
 def edit_letter(auction_code):
-    """Edit letter template for the auction"""
+    """Edit letter template for an auction."""
+    # Validate auction code
+    if not auction_code or not auction_code.strip():
+        flash("Invalid auction code", "error")
+        return redirect(url_for('neighbor_letters_bp.home'))
+        
     try:
-        # Check if the processed data exists
-        data_file = os.path.join(current_app.root_path, 'data', auction_code, 'processed_addresses.csv')
-        if not os.path.exists(data_file):
-            flash('No processed data found. Please upload a CSV file first.', 'error')
+        # Get auction details
+        auction_details = auction_api.get_auction(auction_code)
+        if not auction_details:
+            flash(f"Could not find auction {auction_code}", "error")
             return redirect(url_for('neighbor_letters_bp.home'))
         
-        # Get auction details from API
-        auction_details = None
-        auction_date = ''
-        auction_time = ''
+        # Get auction date/time
+        auction_date = auction_details.get('date', '')
+        auction_time = auction_details.get('time', '')
         
-        if auction_api:
-            try:
-                logger.info(f"Fetching auction details for {auction_code}")
-                auction_details = auction_api.get_auction_details(auction_code)
-                logger.info(f"Got auction details: {auction_details}")
-                
-                # Parse date and time
-                if auction_details.get('date'):
-                    auction_date = datetime.strptime(auction_details['date'], '%Y-%m-%d').strftime('%Y-%m-%d')
-                    logger.info(f"Parsed auction date: {auction_date}")
-                if auction_details.get('time'):
-                    auction_time = auction_details['time']
-                    logger.info(f"Got auction time: {auction_time}")
-            except Exception as e:
-                logger.error(f"Could not fetch auction details: {str(e)}\n{traceback.format_exc()}")
-                flash(f'Warning: Could not fetch auction details: {str(e)}', 'warning')
-        else:
-            logger.warning("Auction API not initialized")
+        # Handle form submission
+        if request.method == 'POST':
+            letter_content = request.form.get('letter_content', '')
+            session[f'letter_content_{auction_code}'] = letter_content
+            flash('Letter template saved successfully', 'success')
+            return redirect(url_for('neighbor_letters_bp.edit_letter', auction_code=auction_code))
         
-        # Read the processed data
-        df = pd.read_csv(data_file)
-        sample_address = df.iloc[0].to_dict() if len(df) > 0 else None
-        logger.info(f"Sample address: {sample_address}")
+        # Get saved letter content or generate default
+        letter_content = session.get(f'letter_content_{auction_code}')
+        if not letter_content:
+            letter_content = generate_default_letter(auction_details, auction_date, auction_time)
+            session[f'letter_content_{auction_code}'] = letter_content
         
-        # Generate default letter content
-        default_letter = generate_default_letter(auction_details, auction_date, auction_time, sample_address)
-        logger.info("Generated default letter content")
+        return render_template(
+            'neighbor_letters/edit.html',
+            auction_code=auction_code,
+            auction_details=auction_details,
+            letter_content=letter_content
+        )
         
-        # Render template
-        logger.info(f"Rendering template with auction_details={auction_details}, auction_date={auction_date}, auction_time={auction_time}")
-        return render_template('edit_letter.html', 
-                            auction_code=auction_code,
-                            sample_address=sample_address,
-                            auction_details=auction_details,
-                            auction_date=auction_date,
-                            auction_time=auction_time,
-                            default_letter=default_letter)
     except Exception as e:
-        logger.error(f"Error editing letter: {str(e)}\n{traceback.format_exc()}")
-        flash(f'Error editing letter: {str(e)}', 'error')
+        logger.error(f"Error editing letter for auction {auction_code}: {str(e)}")
+        flash(f"Error editing letter: {str(e)}", "error")
         return redirect(url_for('neighbor_letters_bp.home'))
 
 @neighbor_letters_bp.route('/view-confirmation/<auction_code>')
