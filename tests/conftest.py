@@ -4,6 +4,14 @@ Shared pytest fixtures for testing
 import os
 import tempfile
 import pytest
+import sys
+from pathlib import Path
+
+# Add project root to Python path
+project_root = str(Path(__file__).parent.parent)
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 from app import create_app
 
 @pytest.fixture
@@ -40,9 +48,9 @@ def runner(app):
 @pytest.fixture
 def sample_csv_data():
     """Sample CSV data for testing."""
-    return """Property Address,Owner Name,Owner Address,City,State,Zip
-123 Main St,John Doe,456 Oak Rd,Springfield,IL,62701
-789 Pine Ave,Jane Smith,321 Elm St,Springfield,IL,62702
+    return """Name,Address,City,State,Zip
+John Doe,123 Main St,Springfield,IL,62701
+Jane Smith,789 Pine Ave,Springfield,IL,62702
 """
 
 @pytest.fixture

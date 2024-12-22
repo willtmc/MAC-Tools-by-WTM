@@ -12,3 +12,4 @@ requests
 pytest
 pytest-flask
 pytest-cov
+PyPDF2

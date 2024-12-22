@@ -11,6 +11,13 @@ from . import qr_labels_bp
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def validate_input(auction_code, starting_lot):
+    """Validate input parameters for label generation"""
+    if not auction_code:
+        raise ValueError("Auction code cannot be empty")
+    if starting_lot < 1:
+        raise ValueError("Starting lot number must be greater than 0")
+
 @qr_labels_bp.route('/')
 def home():
     return render_template('labels.html')
@@ -22,6 +29,9 @@ def generate_labels():
             auction_code = request.form['auction-code']
             starting_lot = int(request.form['starting-lot'])
             ending_lot = int(request.form['ending-lot'])
+
+            validate_input(auction_code, starting_lot)
+            validate_input(auction_code, ending_lot)
 
             logger.info(f"Generating labels for auction {auction_code}, lots {starting_lot}-{ending_lot}")
 
@@ -49,6 +59,9 @@ def generate_labels():
 def generate_sheet(c, auction_code, starting_lot):
     """Generate a single sheet of QR code labels"""
     try:
+        # Validate input
+        validate_input(auction_code, starting_lot)
+        
         page_width, page_height = 612, 792
         label_width = 189
         label_height = 72
