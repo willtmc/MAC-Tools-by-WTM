@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, render_template, jsonify, request, session
 import pandas as pd
 import logging
@@ -6,7 +7,7 @@ from typing import Dict
 import io
 import csv
 import os
-from csv_utils import read_csv_flexibly, CSVReadError
+from utils.csv_utils import read_csv_flexibly, CSVReadError
 from csv_processor import CSVProcessor
 from auction_api import AuctionMethodAPI
 from letter_generator import LetterGenerator
