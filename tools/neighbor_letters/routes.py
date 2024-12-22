@@ -1,13 +1,16 @@
 """Routes for neighbor letters functionality."""
 import os
 import json
-from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify
 from utils.lob_utils import LobClient, Address, LobAPIError
 
 neighbor_letters = Blueprint('neighbor_letters', __name__, url_prefix='/letters')
 
 @neighbor_letters.route('/')
-def letters_home():
+def home():
+    """
+    This is now the home endpoint, so url_for('neighbor_letters.home') will work.
+    """
     return render_template('neighbor_letters/home.html')
 
 @neighbor_letters.route('/upload', methods=['POST'])
