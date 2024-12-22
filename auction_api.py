@@ -5,12 +5,14 @@ from typing import Dict, Optional
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+# Get module logger
 logger = logging.getLogger(__name__)
 
 class AuctionMethodAPI:
     def __init__(self):
         self.api_key = os.getenv('AM_API_KEY')
         if not self.api_key:
+            logger.error("AM_API_KEY environment variable not set")
             raise ValueError("AM_API_KEY environment variable not set")
         
         self.base_url = "https://www.mclemoreauction.com/uapi"
@@ -19,7 +21,7 @@ class AuctionMethodAPI:
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        logger.info(f"Initialized AuctionMethodAPI with URL: {self.base_url}")
+        logger.info("Initialized AuctionMethodAPI with URL: %s", self.base_url)
 
     def get_auction_details(self, auction_code: str) -> Dict:
         """
@@ -28,20 +30,20 @@ class AuctionMethodAPI:
         """
         try:
             url = f"{self.base_url}/auction/{auction_code}"
-            logger.info(f"Fetching auction details from: {url}")
+            logger.info("Fetching auction details from: %s", url)
             
             response = requests.get(url, headers=self.headers)
-            logger.info(f"Response status code: {response.status_code}")
+            logger.info("Response status code: %s", response.status_code)
             
             if response.status_code != 200:
-                logger.error(f"API error response: {response.text}")
+                logger.error("API error response: %s", response.text)
                 raise Exception(f"API returned status code {response.status_code}: {response.text}")
                 
             data = response.json()
-            logger.info(f"Successfully fetched auction details for {auction_code}")
+            logger.info("Successfully fetched auction details for %s", auction_code)
             
             if data.get('message') != 'success':
-                logger.error(f"API returned error message: {data.get('message')}")
+                logger.error("API returned error message: %s", data.get('message'))
                 raise Exception(f"API returned error: {data.get('message')}")
             
             # Extract auction data from the response
@@ -64,7 +66,7 @@ class AuctionMethodAPI:
             }
             
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching auction {auction_code}: {str(e)}")
+            logger.error("Error fetching auction %s: %s", auction_code, str(e))
             raise
 
     def _clean_description(self, description: str) -> str:

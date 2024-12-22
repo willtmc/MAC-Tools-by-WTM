@@ -11,8 +11,7 @@ from csv_processor import CSVProcessor
 from auction_api import AuctionMethodAPI
 from letter_generator import LetterGenerator
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Get module logger
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('main', __name__)

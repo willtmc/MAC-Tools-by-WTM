@@ -10,16 +10,17 @@ from dotenv import load_dotenv
 from config import Config
 from routes import bp, init_apis
 from security import init_security
+from logging_config import setup_logging
 
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
 # Create data directory if it doesn't exist
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
+
+# Get module logger
+logger = logging.getLogger(__name__)
 
 def create_app():
     """Create and configure the Flask application"""
@@ -30,14 +31,9 @@ def create_app():
     app.config.from_object(Config)
     Config.init_app(app)
     
-    # Configure logging
-    if not app.debug:
-        file_handler = logging.FileHandler('mclemore.log')
-        file_handler.setLevel(logging.INFO)
-        app.logger.addHandler(file_handler)
-        
-    app.logger.setLevel(logging.INFO)
-    app.logger.info('McLemore Auction Tools startup')
+    # Set up logging
+    setup_logging(app)
+    logger.info('McLemore Auction Tools startup')
     
     # Security settings
     app.config['SESSION_COOKIE_SECURE'] = False  # Set to False for local development
