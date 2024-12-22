@@ -1,59 +1,45 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify, \
-    send_from_directory, abort
+"""Flask application factory."""
 import os
-from tools.neighbor_letters import neighbor_letters
-from tools.qr_labels import qr_labels_bp
 import logging
-import pytz
+import logging.config
+from flask import Flask
+from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
-from config import Config
+
+from config import config
 from routes import bp, init_apis
-from security import init_security
-from logging_config import setup_logging
+from tools.neighbor_letters.routes import neighbor_letters
+from tools.qr_labels.routes import qr_labels_bp
 
 # Load environment variables
 load_dotenv()
 
-# Create data directory if it doesn't exist
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-os.makedirs(DATA_DIR, exist_ok=True)
-
-# Get module logger
-logger = logging.getLogger(__name__)
-
-def create_app():
-    """Create and configure the Flask application"""
+def create_app(config_name=None):
+    """Create Flask application."""
+    # Create app
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_key')
     
     # Load config
-    app.config.from_object(Config)
-    Config.init_app(app)
+    if isinstance(config_name, dict):
+        # Handle direct config dict
+        app.config.update(config_name)
+    else:
+        # Load from config object
+        if config_name is None:
+            config_name = os.getenv('FLASK_ENV', 'development')
+        app.config.from_object(config[config_name])
     
-    # Set up logging
-    setup_logging(app)
-    logger.info('McLemore Auction Tools startup')
-    
-    # Security settings
-    app.config['SESSION_COOKIE_SECURE'] = False  # Set to False for local development
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['PREFERRED_URL_SCHEME'] = 'http'  # Set to http for local development
-    
-    # Initialize security features and get login_required decorator
-    login_required = init_security(app)
-    
-    # Make login_required available to routes
-    app.config['login_required'] = login_required
+    # Initialize extensions
+    csrf = CSRFProtect()
+    csrf.init_app(app)
     
     # Register blueprints
     app.register_blueprint(bp)
-    app.register_blueprint(neighbor_letters, url_prefix='/letters')  
-    app.register_blueprint(qr_labels_bp, url_prefix='/labels')  
+    app.register_blueprint(neighbor_letters)
+    app.register_blueprint(qr_labels_bp, url_prefix='/labels')
     
     # Initialize APIs
-    init_apis()
+    with app.app_context():
+        init_apis()
     
     return app
-
-# Entry point moved to run.py

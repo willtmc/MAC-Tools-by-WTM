@@ -1,39 +1,128 @@
+"""Main application routes."""
 import os
-from flask import Blueprint, render_template, jsonify, request, session
-import pandas as pd
+import json
 import logging
-import traceback
-from typing import Dict
-import io
-import csv
-import os
-from utils.csv_utils import read_csv_flexibly, CSVReadError
-from csv_processor import CSVProcessor
-from auction_api import AuctionMethodAPI
-from letter_generator import LetterGenerator
-from config import BASE_AUCTION_URL, BASE_TOOLS_URL
+from pathlib import Path
+from datetime import datetime
+from flask import (
+    Blueprint, render_template, request, redirect, url_for,
+    flash, jsonify, session, send_file
+)
 
-# Get module logger
+from tools.neighbor_letters.routes import neighbor_letters
+from auction_api import AuctionMethodAPI, AuctionNotFoundError, AuctionAPIError
+from utils.lob_utils import LobClient, LobAPIError, Address
+
+# Initialize logging
 logger = logging.getLogger(__name__)
 
-# Initialize API clients
-try:
-    auction_api = AuctionMethodAPI()
-    logger.info("Successfully initialized AuctionMethodAPI")
-except ValueError as e:
-    logger.error(f"Could not initialize AuctionMethodAPI: {str(e)}")
-    auction_api = None
-
-letter_generator = None
-
-def init_apis():
-    pass
-
+# Initialize blueprint
 bp = Blueprint('main', __name__)
 
+# Initialize APIs
+auction_api = None
+
+def init_apis():
+    """Initialize API clients."""
+    global auction_api
+    try:
+        auction_api = AuctionMethodAPI()
+    except Exception as e:
+        logger.error(f"Failed to initialize AuctionMethodAPI: {str(e)}")
+        raise
+
 @bp.route('/')
-def home():
+def index():
+    """Home page."""
     return render_template('index.html')
+
+@bp.route('/logout')
+def logout():
+    """Logout route."""
+    session.clear()
+    return redirect(url_for('main.index'))
+
+@bp.route('/auctions/<auction_code>')
+def auction_details(auction_code):
+    """Show auction details."""
+    try:
+        # Get auction details
+        auction = auction_api.get_auction_details(auction_code)
+        if not auction:
+            flash('Could not find auction', 'error')
+            return redirect(url_for('main.index'))
+            
+        return render_template(
+            'auction_details.html',
+            auction=auction
+        )
+        
+    except AuctionNotFoundError:
+        flash('Could not find auction', 'error')
+        return redirect(url_for('main.index'))
+        
+    except AuctionAPIError as e:
+        flash(f'Error getting auction details: {str(e)}', 'error')
+        return redirect(url_for('main.index'))
+        
+    except Exception as e:
+        logger.error(f"Error getting auction details: {str(e)}")
+        flash('An unexpected error occurred', 'error')
+        return redirect(url_for('main.index'))
+
+@bp.route('/auctions/search')
+def search_auctions():
+    """Search auctions."""
+    try:
+        # Get search query
+        query = request.args.get('q', '')
+        if not query:
+            return jsonify({
+                'success': True,
+                'auctions': []
+            })
+            
+        # Search auctions
+        auctions = auction_api.search_auctions(query)
+        
+        return jsonify({
+            'success': True,
+            'auctions': auctions
+        })
+        
+    except AuctionAPIError as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+        
+    except Exception as e:
+        logger.error(f"Error searching auctions: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'An unexpected error occurred'
+        }), 500
+
+@bp.route('/download/<path:filename>')
+def download_file(filename):
+    """Download a file."""
+    try:
+        # Get file path
+        file_path = Path('data') / filename
+        if not file_path.exists():
+            flash('File not found', 'error')
+            return redirect(url_for('main.index'))
+            
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=file_path.name
+        )
+        
+    except Exception as e:
+        logger.error(f"Error downloading file: {str(e)}")
+        flash('An unexpected error occurred', 'error')
+        return redirect(url_for('main.index'))
 
 @bp.route('/process', methods=['POST'])
 def process():
@@ -129,20 +218,49 @@ def send_letters(auction_code):
             
         processed_data = session['processed_data']
         
-        # Initialize letter generator if needed
-        global letter_generator
-        if not letter_generator:
-            letter_generator = LetterGenerator()
-            
+        # Initialize Lob client
+        lob_client = LobClient(use_test_key=False)
+        
+        # Convert addresses to Address objects
+        addresses = [Address(
+            name=addr['name'],
+            address_line1=addr['address_line1'],
+            address_city=addr['address_city'],
+            address_state=addr['address_state'],
+            address_zip=addr['address_zip']
+        ) for addr in processed_data]
+        
+        # Verify addresses using Lob
+        verified_addresses = []
+        invalid_addresses = []
+        
+        for addr in addresses:
+            verification = lob_client.verify_address(addr)
+            if verification['valid']:
+                verified_addresses.append(addr)
+            else:
+                invalid_addresses.append({
+                    'address': addr,
+                    'reason': verification['deliverability']
+                })
+        
         # Send letters
-        results = letter_generator.send_letters(processed_data, auction_code)
+        result = lob_client.send_batch(verified_addresses, 'letter_template.html', {})
         
         return jsonify({
             'success': True,
             'message': 'Letters sent successfully',
-            'results': results
+            'details': {
+                'campaign_id': result['id'],
+                'addresses_sent': len(verified_addresses)
+            }
         })
         
+    except LobAPIError as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
     except Exception as e:
         logger.error(f"Error sending letters: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")

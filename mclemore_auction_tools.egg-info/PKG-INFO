@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: mclemore-auction-tools
+Version: 0.1
+Requires-Dist: flask
+Requires-Dist: requests
+Requires-Dist: python-dotenv
+Requires-Dist: lob
+Requires-Dist: pandas
+Requires-Dist: pytest

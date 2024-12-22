@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Neighbor Letters{% endblock %}
+
+{% block content %}
+<div class="mclemore-container">
+    <h1 class="mclemore-title">Neighbor Letters</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mclemore-card">
+                <div class="mclemore-card-header">
+                    <h4 class="mclemore-subtitle mb-0">Start New Campaign</h4>
+                </div>
+                <div class="mclemore-card-body">
+                    <form id="auctionForm" action="{{ url_for('neighbor_letters.edit_letter') }}" method="GET">
+                        <div class="mclemore-form-group">
+                            <label for="auction_code">Auction Code</label>
+                            <input type="text" class="mclemore-form-control" id="auction_code" name="auction_code" required>
+                        </div>
+                        <button type="submit" class="mclemore-btn mclemore-btn-primary">Create Letters</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="mclemore-card">
+                <div class="mclemore-card-header">
+                    <h4 class="mclemore-subtitle mb-0">Instructions</h4>
+                </div>
+                <div class="mclemore-card-body">
+                    <ol>
+                        <li>Enter an auction code to start</li>
+                        <li>Create or edit your letter template</li>
+                        <li>Upload a CSV file with neighbor addresses</li>
+                        <li>Preview the letters</li>
+                        <li>Send the letters through Lob</li>
+                    </ol>
+                    <p><strong>Note:</strong> Make sure your CSV file has these columns:</p>
+                    <ul>
+                        <li>name</li>
+                        <li>address_line1</li>
+                        <li>address_city</li>
+                        <li>address_state</li>
+                        <li>address_zip</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('auctionForm').addEventListener('submit', function(e) {
+    const auctionCode = document.getElementById('auction_code').value.trim();
+    if (!auctionCode) {
+        e.preventDefault();
+        alert('Please enter an auction code');
+    }
+});
+</script>
+{% endblock %}
