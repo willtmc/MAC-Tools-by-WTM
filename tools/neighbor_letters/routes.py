@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 import re
 from utils.csv_utils import read_csv_flexibly, CSVReadError
 from utils.auction_utils import extract_manager_info, clean_auction_description
+from csv_processor import CSVProcessor, CSVProcessorError, CSVFormatError
 
 from . import neighbor_letters_bp
 
@@ -141,41 +142,11 @@ def process():
             logger.error("Empty CSV file provided")
             return jsonify({'success': False, 'message': 'The CSV file is empty'}), 400
 
-        # Process the data
+        # Process the data using CSVProcessor
         try:
-            # Check if it's CRS format
-            if all(col in df.columns for col in ['Owner 1', 'Owner Address', 'Owner City', 'Owner State', 'Owner Zip']):
-                logger.info("Detected CRS format")
-                processed_df = pd.DataFrame({
-                    'Name': df['Owner 1'].astype(str),
-                    'Address': df['Owner Address'].astype(str),
-                    'City': df['Owner City'].astype(str),
-                    'State': df['Owner State'].astype(str),
-                    'Zip': df['Owner Zip'].astype(str)
-                })
-            # Check if it's simple format
-            elif all(col in df.columns for col in ['Name', 'Address', 'City', 'State', 'Zip']):
-                logger.info("Detected simple format")
-                processed_df = df[['Name', 'Address', 'City', 'State', 'Zip']].astype(str)
-            else:
-                logger.error(f"Invalid column format. Found columns: {list(df.columns)}")
-                return jsonify({
-                    'success': False, 
-                    'message': 'Invalid CSV format. Please ensure your file has either:\n' +
-                              '1. CRS format: Owner 1, Owner Address, Owner City, Owner State, Owner Zip\n' +
-                              '2. Simple format: Name, Address, City, State, Zip'
-                }), 400
-
-            # Clean the data
-            logger.info("Cleaning data...")
-            processed_df = processed_df.dropna()
-            processed_df['Name'] = processed_df['Name'].str[:40]  # Truncate names
-            processed_df = processed_df.drop_duplicates()  # Remove duplicates
+            processor = CSVProcessor()
+            processed_df, stats = processor.process_csv_data(df)
             
-            # Convert empty strings to NaN and drop those rows
-            processed_df = processed_df.replace(r'^\s*$', pd.NA, regex=True)
-            processed_df = processed_df.dropna()
-
             # Save processed data
             output_dir = os.path.join(current_app.root_path, 'data', auction_code)
             os.makedirs(output_dir, exist_ok=True)
@@ -187,11 +158,20 @@ def process():
             return jsonify({
                 'success': True,
                 'message': 'File processed successfully',
-                'total_rows': len(df),
-                'processed_rows': len(processed_df),
-                'skipped_rows': len(df) - len(processed_df)
+                'total_rows': stats.total_rows,
+                'processed_rows': stats.processed_rows,
+                'skipped_rows': stats.skipped_rows,
+                'format_detected': stats.format_detected,
+                'cemetery_records_skipped': stats.cemetery_records_skipped,
+                'duplicate_rows': stats.duplicate_rows
             })
 
+        except CSVFormatError as e:
+            logger.error(f"Invalid CSV format: {str(e)}")
+            return jsonify({'success': False, 'message': str(e)}), 400
+        except CSVProcessorError as e:
+            logger.error(f"Error processing CSV: {str(e)}")
+            return jsonify({'success': False, 'message': str(e)}), 400
         except Exception as e:
             logger.error(f"Error processing data: {str(e)}\n{traceback.format_exc()}")
             return jsonify({'success': False, 'message': f'Error processing data: {str(e)}'}), 500
