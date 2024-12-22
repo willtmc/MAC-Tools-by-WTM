@@ -3,21 +3,24 @@
 {% block title %}Edit Letter Template{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Edit Letter Template</h2>
-    <h4>Auction: {{ auction_code }}</h4>
+<div class="mclemore-container">
+    <h1 class="mclemore-title">Edit Letter Template</h1>
+    <h3 class="mclemore-subtitle">Auction: {{ auction_code }}</h3>
 
     <div class="row">
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Auction Details</h5>
+            <div class="mclemore-card">
+                <div class="mclemore-card-header">
+                    <h4 class="mclemore-subtitle mb-0">Auction Details</h4>
                 </div>
-                <div class="card-body">
+                <div class="mclemore-card-body">
                     <p><strong>Title:</strong> {{ auction_details.title }}</p>
                     <p><strong>Location:</strong> {{ auction_details.location }}</p>
                     <p><strong>Date:</strong> {{ auction_details.date }}</p>
                     <p><strong>Time:</strong> {{ auction_details.time }}</p>
+                    {% if auction_details.description %}
+                    <p><strong>Description:</strong> {{ auction_details.description }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -26,25 +29,29 @@
     <div class="row mt-4">
         <div class="col-12">
             <form method="POST">
-                {{ csrf_token() }}
-                <div class="form-group">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mclemore-form-group">
                     <label for="letter_content"><h5>Letter Content</h5></label>
-                    <textarea class="form-control" id="letter_content" name="letter_content" rows="15">{{ letter_content | safe }}</textarea>
+                    <textarea class="mclemore-form-control" id="letter_content" name="letter_content" rows="15">{{ letter_content | safe }}</textarea>
                 </div>
-                <button type="submit" class="btn btn-primary mt-3">Save Template</button>
-                <a href="{{ url_for('neighbor_letters.home') }}" class="btn btn-secondary mt-3">Back</a>
+                <button type="submit" class="mclemore-btn mclemore-btn-primary mt-3">Save Template</button>
+                <a href="{{ url_for('neighbor_letters.home') }}" class="mclemore-btn mclemore-btn-secondary mt-3">Back</a>
             </form>
         </div>
     </div>
 </div>
 
 <script>
-    // Initialize TinyMCE
+    // Initialize TinyMCE with basic configuration
     tinymce.init({
         selector: '#letter_content',
-        plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
-        toolbar_mode: 'floating',
-        height: 500
+        promotion: false,
+        branding: false,
+        plugins: 'lists link',
+        toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link',
+        menubar: false,
+        height: 500,
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }'
     });
 </script>
 {% endblock %}

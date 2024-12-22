@@ -57,40 +57,57 @@
             margin-bottom: 1.5rem;
             border-radius: 4px;
         }
+        .mclemore-card {
+            background-color: white;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        .mclemore-card-header {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .mclemore-card-body {
+            padding: 1rem;
+        }
     </style>
 </head>
 <body>
     <div class="mclemore-container">
         <h1 class="mclemore-title">McLemore Auction Tools</h1>
-        
+
         <div class="mclemore-info">
-            <h2 class="mclemore-subtitle">CSV File Instructions</h2>
+            <p>Welcome to McLemore Auction Tools! This application provides tools to help manage auctions efficiently.</p>
+        </div>
+
+        <div class="mclemore-section">
+            <h2 class="mclemore-subtitle">Available Tools</h2>
             
-            <div class="mclemore-section">
-                <h3 class="mclemore-section">1. CRS Format</h3>
-                <p>Required columns:</p>
-                <div class="mclemore-code">Owner 1, Owner Address, Owner City, Owner State, Owner Zip</div>
-                <div class="mclemore-note">
-                    <strong>Note:</strong>
-                    <ul>
-                        <li>Only Owner 1 name is used</li>
-                        <li>Names truncated to 40 characters</li>
-                        <li>Only owner address is used</li>
-                    </ul>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mclemore-card">
+                        <div class="mclemore-card-header">
+                            <h3>Neighbor Letters</h3>
+                        </div>
+                        <div class="mclemore-card-body">
+                            <p>Generate and manage neighbor notification letters for auctions.</p>
+                            <a href="{{ url_for('neighbor_letters.home') }}" class="mclemore-btn mclemore-btn-primary">Go to Letter System</a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="mclemore-section">
-                <h3 class="mclemore-section">2. Manual Format</h3>
-                <p>Required columns:</p>
-                <div class="mclemore-code">Name, Address, City, State, Zip</div>
-                <div class="mclemore-note">
-                    <strong>Note:</strong>
-                    <ul>
-                        <li>Names truncated to 40 characters</li>
-                        <li>All fields required</li>
-                        <li>Duplicates removed automatically</li>
-                    </ul>
+                
+                <div class="col-md-6">
+                    <div class="mclemore-card">
+                        <div class="mclemore-card-header">
+                            <h3>QR Labels</h3>
+                        </div>
+                        <div class="mclemore-card-body">
+                            <p>Create and manage QR code labels for auction items.</p>
+                            <a href="{{ url_for('qr_labels_bp.home') }}" class="mclemore-btn mclemore-btn-primary">Go to Label Generator</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -21,9 +21,21 @@ def init_security(app):
         if request.method == "POST":
             if request.endpoint and 'static' in request.endpoint:
                 return
+                
             token = session.get('_csrf_token', None)
-            if not token or token != request.form.get('csrf_token'):
-                app.logger.error(f"CSRF token mismatch. Session token: {token}, Form token: {request.form.get('csrf_token')}")
+            if not token:
+                app.logger.error("No CSRF token in session")
+                abort(403)
+                
+            # Check for token in form data, JSON body, or headers
+            client_token = (
+                request.form.get('csrf_token') or  # Form data
+                (request.is_json and request.json.get('csrf_token')) or  # JSON body
+                request.headers.get('X-CSRF-Token')  # Headers
+            )
+            
+            if not client_token or client_token != token:
+                app.logger.error(f"CSRF token mismatch. Session token: {token}, Client token: {client_token}")
                 abort(403)
 
     def generate_csrf_token():
@@ -49,5 +61,5 @@ def init_security(app):
                 return abort(401)
             return f(*args, **kwargs)
         return decorated_function
-
+        
     return login_required

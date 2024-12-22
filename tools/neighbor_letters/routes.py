@@ -7,7 +7,7 @@ import traceback
 from typing import Dict
 import io
 from datetime import datetime
-from auction_api import AuctionMethodAPI
+from auction_api import AuctionMethodAPI, AuctionNotFoundError, AuctionAPIError
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import re
@@ -18,7 +18,8 @@ from config import BASE_AUCTION_URL, SIGNATURE_IMAGE_URL
 
 neighbor_letters = Blueprint('neighbor_letters', __name__, 
                            template_folder='templates',
-                           static_folder='static')
+                           static_folder='static',
+                           url_prefix='/letters')  # Add URL prefix here
 
 # Get module logger
 logger = logging.getLogger(__name__)
@@ -160,15 +161,17 @@ def process():
 
             logger.info(f"Successfully processed and saved {len(processed_df)} addresses")
 
+            # Store data in session
+            session['processed_data'] = processed_df.to_dict('records')
+
+            # Redirect to edit letter page
+            edit_url = url_for('neighbor_letters.edit_letter', auction_code=auction_code)
+            
             return jsonify({
                 'success': True,
                 'message': 'File processed successfully',
-                'total_rows': stats.total_rows,
-                'processed_rows': stats.processed_rows,
-                'skipped_rows': stats.skipped_rows,
-                'format_detected': stats.format_detected,
-                'cemetery_records_skipped': stats.cemetery_records_skipped,
-                'duplicate_rows': stats.duplicate_rows
+                'stats': stats,
+                'redirect': edit_url
             })
 
         except CSVFormatError as e:
@@ -200,27 +203,42 @@ def edit_letter(auction_code):
     
     try:
         # Get auction details
-        auction_details = auction_api.get_auction(auction_code)
+        auction_details = auction_api.get_auction_details(auction_code)
         if not auction_details:
             flash('Could not find auction', 'danger')
             return redirect(url_for('neighbor_letters.home'))
         
+        # Generate default letter content if none exists
         if request.method == 'POST':
             letter_content = request.form.get('letter_content', '')
             session[f'letter_template_{auction_code}'] = letter_content
             flash('Letter template saved successfully', 'success')
             return redirect(url_for('neighbor_letters.edit_letter', auction_code=auction_code))
         
-        # Get letter template from session or use default
-        letter_content = session.get(f'letter_template_{auction_code}', '')
+        # Get letter template from session or generate default
+        letter_content = session.get(f'letter_template_{auction_code}')
+        if not letter_content:
+            letter_content = generate_default_letter(
+                auction_details=auction_details,
+                auction_date=auction_details['date'],
+                auction_time=auction_details['time']
+            )
+            session[f'letter_template_{auction_code}'] = letter_content
         
         return render_template('neighbor_letters/edit.html',
                              auction_code=auction_code,
                              auction_details=auction_details,
                              letter_content=letter_content)
     
+    except AuctionNotFoundError:
+        flash('Could not find auction. Please check the auction code.', 'danger')
+        return redirect(url_for('neighbor_letters.home'))
+    except AuctionAPIError as e:
+        logger.error(f"API error for auction {auction_code}: {str(e)}")
+        flash('Error fetching auction details. Please try again.', 'danger')
+        return redirect(url_for('neighbor_letters.home'))
     except Exception as e:
-        logger.error(f"Error editing letter for auction {auction_code}: {str(e)}")
+        logger.error(f"Error editing letter for auction {auction_code}: {str(e)}\n{traceback.format_exc()}")
         flash('An error occurred while editing the letter template', 'danger')
         return redirect(url_for('neighbor_letters.home'))
 
