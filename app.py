@@ -3,6 +3,7 @@ import os
 from flask import Flask, render_template
 from flask_wtf.csrf import CSRFProtect
 from tools.neighbor_letters.routes import neighbor_letters
+from tools.qr_labels.routes import qr_labels_bp
 
 def create_app():
     app = Flask(__name__)
@@ -11,8 +12,10 @@ def create_app():
     csrf = CSRFProtect()
     csrf.init_app(app)
 
-    # Register blueprint
+    # Register neighbor letters blueprint
     app.register_blueprint(neighbor_letters)
+    # Register QR labels blueprint
+    app.register_blueprint(qr_labels_bp, url_prefix='/qr-labels')
 
     @app.route('/')
     def index():

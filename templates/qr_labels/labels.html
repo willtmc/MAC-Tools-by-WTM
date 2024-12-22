@@ -9,7 +9,8 @@
         <div class="container">
             <span class="navbar-brand">Auction Label Generator</span>
             <div class="navbar-nav">
-                <a class="nav-link" href="http://127.0.0.1:5001">Back to Main</a>
+                <!-- Changed link to go back to the main index on port 5003 -->
+                <a class="nav-link" href="/">Back to Main</a>
             </div>
         </div>
     </nav>
@@ -20,7 +21,8 @@
                 <div class="card">
                     <div class="card-body">
                         <h2 class="card-title">Generate QR Code Labels</h2>
-                        <form action="/generate" method="post">
+                        <!-- Updated form action to match the new url_prefix '/qr-labels' -->
+                        <form action="/qr-labels/generate" method="post">
                             <div class="mb-3">
                                 <label for="auction-code" class="form-label">Auction Code</label>
                                 <input type="text" class="form-control" id="auction-code" name="auction-code" required>
