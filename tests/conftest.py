@@ -6,6 +6,8 @@ import tempfile
 import pytest
 import sys
 from pathlib import Path
+from io import BytesIO
+from reportlab.pdfgen import canvas
 
 # Add project root to Python path
 project_root = str(Path(__file__).parent.parent)
@@ -44,6 +46,20 @@ def client(app):
 def runner(app):
     """A test CLI runner for the app."""
     return app.test_cli_runner()
+
+@pytest.fixture
+def pdf_canvas():
+    """Create a PDF canvas for testing.
+    
+    Returns:
+        tuple: (canvas, buffer) where canvas is the ReportLab Canvas object
+        and buffer is the BytesIO buffer containing the PDF data.
+    """
+    pdf_buffer = BytesIO()
+    c = canvas.Canvas(pdf_buffer)
+    yield c, pdf_buffer
+    c.save()
+    pdf_buffer.seek(0)
 
 @pytest.fixture
 def sample_csv_data():

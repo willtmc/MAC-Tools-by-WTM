@@ -2,24 +2,16 @@
 Tests for QR code label generation functionality
 """
 import pytest
-from io import BytesIO
 import PyPDF2
-from reportlab.pdfgen import canvas
 from tools.qr_labels.routes import generate_sheet, qrcode
 
-def test_label_generation(app, sample_auction_data):
+def test_label_generation(app, pdf_canvas, sample_auction_data):
     """Test basic label generation functionality."""
     with app.app_context():
-        # Create a PDF buffer and canvas
-        pdf_buffer = BytesIO()
-        c = canvas.Canvas(pdf_buffer)
+        c, pdf_buffer = pdf_canvas
         
         # Generate labels
         generate_sheet(c, sample_auction_data['auction_code'], sample_auction_data['starting_lot'])
-        c.save()
-        
-        # Move buffer pointer to start
-        pdf_buffer.seek(0)
         
         # Read the generated PDF
         reader = PyPDF2.PdfReader(pdf_buffer)
@@ -27,20 +19,18 @@ def test_label_generation(app, sample_auction_data):
         # Basic checks
         assert len(reader.pages) > 0  # Should have at least one page
 
-def test_invalid_lot_numbers(app):
+def test_invalid_lot_numbers(app, pdf_canvas):
     """Test handling of invalid lot numbers."""
     with app.app_context():
-        pdf_buffer = BytesIO()
-        c = canvas.Canvas(pdf_buffer)
+        c, _ = pdf_canvas
         
         with pytest.raises(ValueError):
             generate_sheet(c, 'TEST123', -1)  # Negative lot number
 
-def test_invalid_auction_code(app):
+def test_invalid_auction_code(app, pdf_canvas):
     """Test handling of invalid auction code."""
     with app.app_context():
-        pdf_buffer = BytesIO()
-        c = canvas.Canvas(pdf_buffer)
+        c, _ = pdf_canvas
         
         with pytest.raises(ValueError):
             generate_sheet(c, '', 1)  # Empty auction code
