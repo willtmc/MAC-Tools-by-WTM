@@ -33,6 +33,7 @@
     </div>
 </div>
 
+<!-- We'll show results (stats, next steps) in the #results container below -->
 <div class="row mt-4">
     <div class="col-12">
         <div id="results" class="mclemore-info" style="display: none;"></div>
@@ -61,7 +62,27 @@ $(document).ready(function() {
             contentType: false,
             success: function(response) {
                 if (response.success) {
-                    $('#results').html(`<h4>Success!</h4><p>${response.message}</p>`).show();
+                    // If the server includes 'stats' in response, show them
+                    if (response.stats) {
+                        let s = response.stats;
+                        let html = `
+                            <h4>Success!</h4>
+                            <p>${response.message}</p>
+                            <ul>
+                                <li>Total Rows: ${s.total_rows}</li>
+                                <li>Processed Rows: ${s.processed_rows}</li>
+                                <li>Skipped Rows: ${s.skipped_rows}</li>
+                                <li>Format Detected: ${s.format_detected || 'unknown'}</li>
+                                <li>Cemetery Records Skipped: ${s.cemetery_records_skipped || 0}</li>
+                                <li>Duplicate Rows: ${s.duplicate_rows || 0}</li>
+                            </ul>
+                            <p>Next Step: Edit Letter Template at /neighbor_letters/edit/<strong>${response.auction_code}</strong></p>
+                        `;
+                        $('#results').html(html).show();
+                    } else {
+                        // fallback if no stats
+                        $('#results').html(`<h4>Success!</h4><p>${response.message}</p>`).show();
+                    }
                 } else {
                     $('#results').removeClass('mclemore-info').addClass('mclemore-error')
                         .html(`<h4>Error</h4><p>${response.message}</p>`)

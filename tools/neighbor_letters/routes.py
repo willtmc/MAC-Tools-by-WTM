@@ -1,7 +1,8 @@
 """Routes for neighbor letters functionality."""
 import os
 import json
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, current_app
+from csv_processor import CSVProcessor, CSVProcessorError
 from utils.lob_utils import LobClient, Address, LobAPIError
 
 neighbor_letters = Blueprint('neighbor_letters', __name__, url_prefix='/neighbor_letters')
@@ -17,14 +18,41 @@ def home():
 def process():
     """
     Page or endpoint for uploading CSV addresses.
-    If GET, display the page. If POST, handle the file.
+    If GET, display the page. If POST, handle the file + parse CSV + show stats.
     """
     if request.method == 'POST':
+        auction_code = request.form.get('auction_code', '').strip()
         file = request.files.get('file')
         if not file or not file.filename.endswith('.csv'):
             return jsonify({'success': False, 'message': 'Please upload a .csv file'}), 400
-        # In a real scenario, parse CSV here.
-        return jsonify({'success': True, 'message': 'CSV uploaded successfully!', 'stats': {}}), 200
+        if not auction_code:
+            return jsonify({'success': False, 'message': 'Auction code is required'}), 400
+
+        try:
+            # Parse CSV
+            import pandas as pd
+            from csv_processor import CSVProcessor
+            df = pd.read_csv(file)
+            processor = CSVProcessor()
+            result_df, stats = processor.process_csv_data(df)
+
+            # Save the processed CSV to disk
+            data_folder = current_app.config['DATA_FOLDER']
+            out_path = os.path.join(data_folder, f"{auction_code}_processed.csv")
+            result_df.to_csv(out_path, index=False)
+
+            return jsonify({
+                'success': True,
+                'message': 'CSV uploaded and processed successfully.',
+                'stats': stats,
+                'auction_code': auction_code
+            }), 200
+
+        except (CSVProcessorError, ValueError) as e:
+            return jsonify({'success': False, 'message': str(e)}), 400
+        except Exception as e:
+            return jsonify({'success': False, 'message': f"Unexpected error: {str(e)}"}), 500
+
     # If GET, render a page that instructs user to upload CSV
     return render_template('neighbor_letters/letters.html')
 
@@ -62,7 +90,6 @@ def send_letters():
     except LobAPIError as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# Example route if you want “edit_letter” style usage:
 @neighbor_letters.route('/edit/<auction_code>', methods=['GET', 'POST'])
 def edit(auction_code):
     """
