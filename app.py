@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify, \
     send_from_directory, abort
 import os
-from tools.neighbor_letters import neighbor_letters_bp
+from tools.neighbor_letters import neighbor_letters
 from tools.qr_labels import qr_labels_bp
 import logging
 import pytz
@@ -48,8 +48,8 @@ def create_app():
     
     # Register blueprints
     app.register_blueprint(bp)
-    app.register_blueprint(neighbor_letters_bp, url_prefix='/letters')
-    app.register_blueprint(qr_labels_bp, url_prefix='/labels')
+    app.register_blueprint(neighbor_letters, url_prefix='/neighbor_letters')
+    app.register_blueprint(qr_labels_bp, url_prefix='/qr_labels')
     
     # Initialize APIs
     init_apis()

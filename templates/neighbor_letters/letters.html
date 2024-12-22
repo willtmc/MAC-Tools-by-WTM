@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Neighbor Letters{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Neighbor Letters</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Upload Addresses</h5>
+                </div>
+                <div class="card-body">
+                    <form id="upload-form" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="auction_code">Auction Code</label>
+                            <input type="text" class="form-control" id="auction_code" name="auction_code" required>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="file">CSV File</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Upload</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div id="results" class="alert" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#upload-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: "{{ url_for('neighbor_letters.process') }}",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                $('#results')
+                    .removeClass('alert-danger')
+                    .addClass('alert-success')
+                    .html(`
+                        <h4>Success!</h4>
+                        <p>${response.message}</p>
+                        <ul>
+                            <li>Total Rows: ${response.total_rows}</li>
+                            <li>Processed Rows: ${response.processed_rows}</li>
+                            <li>Skipped Rows: ${response.skipped_rows}</li>
+                            <li>Format Detected: ${response.format_detected}</li>
+                            <li>Cemetery Records Skipped: ${response.cemetery_records_skipped}</li>
+                            <li>Duplicate Rows: ${response.duplicate_rows}</li>
+                        </ul>
+                        <a href="{{ url_for('neighbor_letters.edit_letter') }}/${formData.get('auction_code')}" class="btn btn-primary">Edit Letter</a>
+                    `)
+                    .show();
+            },
+            error: function(xhr) {
+                var message = 'An error occurred';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                $('#results')
+                    .removeClass('alert-success')
+                    .addClass('alert-danger')
+                    .html(`<h4>Error</h4><p>${message}</p>`)
+                    .show();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

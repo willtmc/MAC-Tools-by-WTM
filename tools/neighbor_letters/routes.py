@@ -1,3 +1,4 @@
+"""Routes for neighbor letters functionality."""
 import os
 from flask import Blueprint, render_template, request, jsonify, session, current_app, flash, abort, redirect, url_for
 import pandas as pd
@@ -15,7 +16,9 @@ from utils.auction_utils import extract_manager_info, clean_auction_description
 from csv_processor import CSVProcessor, CSVProcessorError, CSVFormatError
 from config import BASE_AUCTION_URL, SIGNATURE_IMAGE_URL
 
-from . import neighbor_letters_bp
+neighbor_letters = Blueprint('neighbor_letters', __name__, 
+                           template_folder='templates',
+                           static_folder='static')
 
 # Get module logger
 logger = logging.getLogger(__name__)
@@ -98,11 +101,12 @@ def generate_default_letter(auction_details, auction_date, auction_time, sample_
     
     return letter
 
-@neighbor_letters_bp.route('/')
+@neighbor_letters.route('/')
 def home():
-    return render_template('letters.html')
+    """Home page for neighbor letters."""
+    return render_template('neighbor_letters/letters.html')
 
-@neighbor_letters_bp.route('/process', methods=['POST'])
+@neighbor_letters.route('/process', methods=['POST'])
 def process():
     """Process uploaded CSV file"""
     try:
@@ -181,51 +185,46 @@ def process():
         logger.error(f"Unexpected error: {str(e)}\n{traceback.format_exc()}")
         return jsonify({'success': False, 'message': f'An unexpected error occurred: {str(e)}'}), 500
 
-@neighbor_letters_bp.route('/edit/<auction_code>', methods=['GET', 'POST'])
+@neighbor_letters.route('/edit/', defaults={'auction_code': None})
+@neighbor_letters.route('/edit/<auction_code>', methods=['GET', 'POST'])
 def edit_letter(auction_code):
     """Edit letter template for an auction."""
-    # Validate auction code
-    if not auction_code or not auction_code.strip():
-        flash("Invalid auction code", "error")
-        return redirect(url_for('neighbor_letters_bp.home'))
-        
+    # Check for empty auction code
+    if not auction_code:
+        return redirect(url_for('neighbor_letters.home'))
+    
+    # Check for blank auction code
+    if auction_code.strip() == '':
+        flash('Invalid auction code', 'danger')
+        return redirect(url_for('neighbor_letters.home'))
+    
     try:
         # Get auction details
         auction_details = auction_api.get_auction(auction_code)
         if not auction_details:
-            flash(f"Could not find auction {auction_code}", "error")
-            return redirect(url_for('neighbor_letters_bp.home'))
+            flash('Could not find auction', 'danger')
+            return redirect(url_for('neighbor_letters.home'))
         
-        # Get auction date/time
-        auction_date = auction_details.get('date', '')
-        auction_time = auction_details.get('time', '')
-        
-        # Handle form submission
         if request.method == 'POST':
             letter_content = request.form.get('letter_content', '')
-            session[f'letter_content_{auction_code}'] = letter_content
+            session[f'letter_template_{auction_code}'] = letter_content
             flash('Letter template saved successfully', 'success')
-            return redirect(url_for('neighbor_letters_bp.edit_letter', auction_code=auction_code))
+            return redirect(url_for('neighbor_letters.edit_letter', auction_code=auction_code))
         
-        # Get saved letter content or generate default
-        letter_content = session.get(f'letter_content_{auction_code}')
-        if not letter_content:
-            letter_content = generate_default_letter(auction_details, auction_date, auction_time)
-            session[f'letter_content_{auction_code}'] = letter_content
+        # Get letter template from session or use default
+        letter_content = session.get(f'letter_template_{auction_code}', '')
         
-        return render_template(
-            'neighbor_letters/edit.html',
-            auction_code=auction_code,
-            auction_details=auction_details,
-            letter_content=letter_content
-        )
-        
+        return render_template('neighbor_letters/edit.html',
+                             auction_code=auction_code,
+                             auction_details=auction_details,
+                             letter_content=letter_content)
+    
     except Exception as e:
         logger.error(f"Error editing letter for auction {auction_code}: {str(e)}")
-        flash(f"Error editing letter: {str(e)}", "error")
-        return redirect(url_for('neighbor_letters_bp.home'))
+        flash('An error occurred while editing the letter template', 'danger')
+        return redirect(url_for('neighbor_letters.home'))
 
-@neighbor_letters_bp.route('/view-confirmation/<auction_code>')
+@neighbor_letters.route('/view-confirmation/<auction_code>')
 def view_confirmation(auction_code):
     """View confirmation page with processed addresses"""
     try:
@@ -244,7 +243,7 @@ def view_confirmation(auction_code):
         return render_template('error.html', 
                             message=f'Error viewing confirmation: {str(e)}')
 
-@neighbor_letters_bp.route('/send-letters/<auction_code>', methods=['POST'])
+@neighbor_letters.route('/send-letters/<auction_code>', methods=['POST'])
 def send_letters(auction_code):
     """Send letters through Lob"""
     try:

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Letter Template{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Letter Template</h2>
+    <h4>Auction: {{ auction_code }}</h4>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Auction Details</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Title:</strong> {{ auction_details.title }}</p>
+                    <p><strong>Location:</strong> {{ auction_details.location }}</p>
+                    <p><strong>Date:</strong> {{ auction_details.date }}</p>
+                    <p><strong>Time:</strong> {{ auction_details.time }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <form method="POST">
+                {{ csrf_token() }}
+                <div class="form-group">
+                    <label for="letter_content"><h5>Letter Content</h5></label>
+                    <textarea class="form-control" id="letter_content" name="letter_content" rows="15">{{ letter_content | safe }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Save Template</button>
+                <a href="{{ url_for('neighbor_letters.home') }}" class="btn btn-secondary mt-3">Back</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize TinyMCE
+    tinymce.init({
+        selector: '#letter_content',
+        plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
+        toolbar_mode: 'floating',
+        height: 500
+    });
+</script>
+{% endblock %}
