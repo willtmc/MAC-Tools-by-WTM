@@ -1,9 +1,32 @@
 import pandas as pd
 import logging
 import traceback
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+class CSVProcessorError(Exception):
+    """Base exception for CSV processing errors"""
+    pass
+
+class CSVFormatError(CSVProcessorError):
+    """Raised when CSV format is invalid"""
+    pass
+
+class DataValidationError(CSVProcessorError):
+    """Raised when data validation fails"""
+    pass
+
+@dataclass
+class ProcessingStats:
+    """Statistics for CSV processing"""
+    total_rows: int = 0
+    processed_rows: int = 0
+    skipped_rows: int = 0
+    format_detected: Optional[str] = None
+    cemetery_records_skipped: int = 0
+    duplicate_rows: int = 0
 
 class CSVProcessor:
     """Process CSV files for neighbor letters"""
@@ -28,14 +51,7 @@ class CSVProcessor:
 
     def __init__(self):
         """Initialize CSV processor"""
-        self.stats = {
-            'total_rows': 0,
-            'processed_rows': 0,
-            'skipped_rows': 0,
-            'format_detected': None,
-            'cemetery_records_skipped': 0,
-            'duplicate_rows': 0
-        }
+        self.stats = ProcessingStats()
 
     def detect_csv_format(self, df: pd.DataFrame) -> str:
         """
@@ -48,8 +64,12 @@ class CSVProcessor:
             str: 'crs' or 'manual'
             
         Raises:
-            ValueError: If CSV format cannot be determined
+            CSVFormatError: If CSV format cannot be determined
+            ValueError: If input DataFrame is invalid
         """
+        if not isinstance(df, pd.DataFrame):
+            raise ValueError("Input must be a pandas DataFrame")
+            
         try:
             # Clean up column names - remove any trailing whitespace
             df.columns = df.columns.str.strip()
@@ -80,12 +100,15 @@ class CSVProcessor:
                 f"Available columns in your CSV: {sorted(list(columns))}"
             )
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise CSVFormatError(error_msg)
             
+        except pd.errors.EmptyDataError as e:
+            logger.error("Empty DataFrame provided")
+            raise CSVFormatError("CSV file is empty") from e
         except Exception as e:
-            logger.error(f"Error detecting CSV format: {str(e)}")
+            logger.error(f"Unexpected error detecting CSV format: {str(e)}")
             logger.error(f"Traceback: {traceback.format_exc()}")
-            raise
+            raise CSVProcessorError("Error detecting CSV format") from e
 
     def truncate_name(self, name: str) -> str:
         """
@@ -95,33 +118,27 @@ class CSVProcessor:
             name: Full name string
             
         Returns:
-            str: Truncated name if necessary
+            str: Truncated name
+            
+        Raises:
+            DataValidationError: If name is invalid
         """
         try:
             if not name or pd.isna(name) or len(str(name).strip()) == 0:
-                return ""
+                raise DataValidationError("Name cannot be empty")
                 
-            # Convert to string and clean
             name = str(name).strip()
-            
-            # Return as is if under limit
             if len(name) <= 40:
                 return name
                 
-            # Truncate to 40 characters
-            truncated = name[:40]
+            # Truncate at last complete word before 40 chars
+            truncated = name[:40].rsplit(' ', 1)[0]
+            logger.info(f"Truncated name from '{name}' to '{truncated}'")
+            return truncated
             
-            # Find the last complete word
-            last_space = truncated.rfind(' ')
-            if last_space > 0:
-                truncated = truncated[:last_space]
-                
-            return truncated.strip()
-            
-        except Exception as e:
-            logger.error(f"Error truncating name '{name}': {str(e)}")
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            return str(name)[:40].strip()  # Fallback to simple truncation
+        except (AttributeError, TypeError) as e:
+            logger.error(f"Invalid name format: {str(e)}")
+            raise DataValidationError(f"Invalid name format: {str(e)}") from e
 
     def clean_address_field(self, value: str) -> str:
         """Clean and validate an address field"""
@@ -138,6 +155,9 @@ class CSVProcessor:
             
         Returns:
             dict: Processed address data
+            
+        Raises:
+            DataValidationError: If data validation fails
         """
         try:
             # Log row data for debugging
@@ -147,11 +167,11 @@ class CSVProcessor:
             name = row.get('Owner 1', '')
             if pd.isna(name) or not str(name).strip():
                 logger.warning(f"Empty name in row: {row.to_dict()}")
-                raise ValueError("Name is required")
+                raise DataValidationError("Name is required")
                 
             name = self.truncate_name(name)
             if not name:
-                raise ValueError("Name is required")
+                raise DataValidationError("Name is required")
             
             # Get and clean address fields
             address = self.clean_address_field(row.get('Owner Address', ''))
@@ -167,7 +187,7 @@ class CSVProcessor:
             if not zip_code: missing.append('Owner Zip')
             
             if missing:
-                raise ValueError(f"Missing required fields: {', '.join(missing)}")
+                raise DataValidationError(f"Missing required fields: {', '.join(missing)}")
             
             processed = {
                 'Name': name,
@@ -184,7 +204,7 @@ class CSVProcessor:
             logger.error(f"Error processing CRS row: {str(e)}")
             logger.error(f"Row data: {row.to_dict()}")
             logger.error(f"Traceback: {traceback.format_exc()}")
-            raise ValueError(f"Error processing row: {str(e)}")
+            raise DataValidationError(f"Error processing row: {str(e)}")
 
     def process_manual_row(self, row: pd.Series) -> dict:
         """
@@ -195,6 +215,9 @@ class CSVProcessor:
             
         Returns:
             dict: Processed address data
+            
+        Raises:
+            DataValidationError: If data validation fails
         """
         try:
             # Log row data for debugging
@@ -204,11 +227,11 @@ class CSVProcessor:
             name = row.get('Name', '')
             if pd.isna(name) or not str(name).strip():
                 logger.warning(f"Empty name in row: {row.to_dict()}")
-                raise ValueError("Name is required")
+                raise DataValidationError("Name is required")
                 
             name = self.truncate_name(name)
             if not name:
-                raise ValueError("Name is required")
+                raise DataValidationError("Name is required")
             
             # Get and clean address fields
             address = self.clean_address_field(row.get('Address', ''))
@@ -224,7 +247,7 @@ class CSVProcessor:
             if not zip_code: missing.append('Zip')
             
             if missing:
-                raise ValueError(f"Missing required fields: {', '.join(missing)}")
+                raise DataValidationError(f"Missing required fields: {', '.join(missing)}")
             
             processed = {
                 'Name': name,
@@ -241,7 +264,7 @@ class CSVProcessor:
             logger.error(f"Error processing manual row: {str(e)}")
             logger.error(f"Row data: {row.to_dict()}")
             logger.error(f"Traceback: {traceback.format_exc()}")
-            raise ValueError(f"Error processing row: {str(e)}")
+            raise DataValidationError(f"Error processing row: {str(e)}")
 
     def process_csv_data(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
         """
@@ -254,7 +277,8 @@ class CSVProcessor:
             Tuple[pd.DataFrame, Dict]: Processed DataFrame and statistics
             
         Raises:
-            ValueError: If CSV format is invalid
+            CSVFormatError: If CSV format is invalid
+            DataValidationError: If data validation fails
         """
         try:
             # Clean up column names
@@ -265,11 +289,11 @@ class CSVProcessor:
             # Fill NaN values with empty strings
             df = df.fillna('')
             
-            self.stats['total_rows'] = len(df)
+            self.stats.total_rows = len(df)
             
             # Detect format
             format_type = self.detect_csv_format(df)
-            self.stats['format_detected'] = format_type
+            self.stats.format_detected = format_type
             logger.info(f"Format detected: {format_type}")
             
             # Process rows based on format
@@ -282,7 +306,7 @@ class CSVProcessor:
                     name = row['Owner 1'] if format_type == 'crs' else row['Name']
                     name = str(name).lower()
                     if not name or any(term in name for term in ['cemetery', 'cemetary', 'memorial', 'church']):
-                        self.stats['cemetery_records_skipped'] = self.stats.get('cemetery_records_skipped', 0) + 1
+                        self.stats.cemetery_records_skipped = self.stats.cemetery_records_skipped + 1
                         logger.info(f"Skipped cemetery/church record: {name}")
                         continue
                     
@@ -301,27 +325,27 @@ class CSVProcessor:
                     )
                     
                     if address_key in seen_addresses:
-                        self.stats['duplicate_rows'] = self.stats.get('duplicate_rows', 0) + 1
+                        self.stats.duplicate_rows = self.stats.duplicate_rows + 1
                         logger.info(f"Skipped duplicate address: {processed_row['Address']}")
                         continue
                         
                     seen_addresses.add(address_key)
                     processed_data.append(processed_row)
-                    self.stats['processed_rows'] += 1
+                    self.stats.processed_rows += 1
                     
-                except ValueError as e:
+                except DataValidationError as e:
                     logger.warning(f"Skipping invalid row {idx}: {str(e)}")
-                    self.stats['skipped_rows'] += 1
+                    self.stats.skipped_rows += 1
                     continue
                 except Exception as e:
                     logger.error(f"Error processing row {idx}: {str(e)}")
                     logger.error(f"Row data: {row.to_dict()}")
                     logger.error(f"Traceback: {traceback.format_exc()}")
-                    self.stats['skipped_rows'] += 1
+                    self.stats.skipped_rows += 1
                     continue
             
             if not processed_data:
-                raise ValueError("No valid rows found in CSV file")
+                raise DataValidationError("No valid rows found in CSV file")
                 
             # Create DataFrame from processed data
             result_df = pd.DataFrame(processed_data)
@@ -330,9 +354,9 @@ class CSVProcessor:
             result_df = result_df.drop_duplicates(subset=['Address', 'City', 'State', 'Zip'])
             
             logger.info(f"Finished processing CSV. Stats: {self.stats}")
-            return result_df, self.stats
+            return result_df, self.stats.__dict__
             
         except Exception as e:
             logger.error(f"Error processing CSV data: {str(e)}")
             logger.error(f"Traceback: {traceback.format_exc()}")
-            raise
+            raise CSVProcessorError("Error processing CSV data") from e
