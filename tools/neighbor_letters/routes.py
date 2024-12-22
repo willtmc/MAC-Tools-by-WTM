@@ -2,7 +2,7 @@
 import os
 import json
 import pandas as pd
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for
 from csv_processor import CSVProcessor, CSVProcessorError
 from utils.lob_utils import LobClient, Address, LobAPIError
 
@@ -35,7 +35,6 @@ def process_csv_file():
 
         data_folder = current_app.config.get('DATA_FOLDER')
         if not data_folder:
-            # fallback to "data" folder in current working directory
             data_folder = os.path.join(os.getcwd(), "data")
             if not os.path.exists(data_folder):
                 os.makedirs(data_folder)
@@ -92,9 +91,16 @@ def send_letters():
 @neighbor_letters.route('/edit/<auction_code>', methods=['GET', 'POST'])
 def edit(auction_code):
     """
-    Minimal example of editing a letter for a given auction_code
+    Editing a letter for a given auction_code, now actually renders edit.html
     """
     if request.method == 'POST':
-        # Save posted letter content, etc.
-        return f"Letter content saved for {auction_code}"
-    return f"Editing letter for {auction_code}"
+        # In real code, you'd save posted letter_content to a file or db.
+        letter_content = request.form.get('letter_content', '')
+        # Just for demonstration:
+        return f"Letter content saved for {auction_code}: {letter_content[:50]}..."
+
+    # For GET, just show the edit template. We can pass a default letter_content or load from file.
+    # For now, we'll pass an empty string or some placeholder.
+    return render_template('neighbor_letters/edit.html',
+                           auction_code=auction_code,
+                           letter_content="Enter your letter content here...")

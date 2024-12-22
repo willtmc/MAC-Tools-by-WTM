@@ -14,11 +14,11 @@
                     <h4 class="mclemore-subtitle mb-0">Auction Details</h4>
                 </div>
                 <div class="mclemore-card-body">
-                    <p><strong>Title:</strong> {{ auction.title }}</p>
-                    <p><strong>Location:</strong> {{ auction.location }}</p>
-                    <p><strong>Date:</strong> {{ auction.date }}</p>
-                    <p><strong>Time:</strong> {{ auction.time }}</p>
-                    {% if auction.description %}
+                    <p><strong>Title:</strong> {{ auction.title if auction else '' }}</p>
+                    <p><strong>Location:</strong> {{ auction.location if auction else '' }}</p>
+                    <p><strong>Date:</strong> {{ auction.date if auction else '' }}</p>
+                    <p><strong>Time:</strong> {{ auction.time if auction else '' }}</p>
+                    {% if auction and auction.description %}
                     <p><strong>Description:</strong> {{ auction.description }}</p>
                     {% endif %}
                 </div>
@@ -32,7 +32,10 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mclemore-form-group">
                     <label for="letter_content"><h5>Letter Content</h5></label>
-                    <textarea class="mclemore-form-control" id="letter_content" name="letter_content" rows="15">{{ letter_content }}</textarea>
+                    <textarea class="mclemore-form-control" 
+                              id="letter_content" 
+                              name="letter_content" 
+                              rows="15">{{ letter_content }}</textarea>
                 </div>
                 <button type="submit" class="mclemore-btn mclemore-btn-primary mt-3">Save Template</button>
                 <a href="{{ url_for('neighbor_letters.home') }}" class="mclemore-btn mclemore-btn-secondary mt-3">Back</a>

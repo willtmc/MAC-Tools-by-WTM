@@ -11,7 +11,6 @@
     </div>
 
     <!-- Single form for uploading CSV on this same page -->
-    <!-- Note the updated action uses 'neighbor_letters.process_csv' instead of 'neighbor_letters.process' -->
     <form id="upload-form" action="{{ url_for('neighbor_letters.process_csv') }}" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mclemore-form-group">
@@ -51,6 +50,8 @@ $(document).ready(function() {
                 if (response.success) {
                     if (response.stats) {
                         let s = response.stats;
+                        // Make the "Next Step" link clickable
+                        let nextLink = `/neighbor_letters/edit/${response.auction_code}`;
                         let html = `
                             <h4>Success!</h4>
                             <p>${response.message}</p>
@@ -62,7 +63,12 @@ $(document).ready(function() {
                                 <li>Cemetery Records Skipped: ${s.cemetery_records_skipped || 0}</li>
                                 <li>Duplicate Rows: ${s.duplicate_rows || 0}</li>
                             </ul>
-                            <p>Next Step: Edit Letter Template at /neighbor_letters/edit/<strong>${response.auction_code}</strong></p>
+                            <p>
+                              Next Step: 
+                              <a href="${nextLink}">
+                                 Edit Letter Template for <strong>${response.auction_code}</strong>
+                              </a>
+                            </p>
                         `;
                         $('#results').html(html).show();
                     } else {
