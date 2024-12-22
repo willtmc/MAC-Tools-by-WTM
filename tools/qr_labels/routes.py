@@ -11,12 +11,27 @@ from . import qr_labels_bp
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def validate_input(auction_code, starting_lot):
-    """Validate input parameters for label generation"""
+def validate_label_inputs(auction_code: str, starting_lot: int, ending_lot: int = None) -> None:
+    """
+    Validate input parameters for label generation.
+    
+    Args:
+        auction_code: The auction code to validate
+        starting_lot: The starting lot number
+        ending_lot: The ending lot number (optional, for batch generation)
+        
+    Raises:
+        ValueError: If any input parameter is invalid
+    """
     if not auction_code:
         raise ValueError("Auction code cannot be empty")
     if starting_lot < 1:
         raise ValueError("Starting lot number must be greater than 0")
+    if ending_lot is not None:
+        if ending_lot < starting_lot:
+            raise ValueError("Ending lot number must be greater than or equal to starting lot number")
+        if ending_lot < 1:
+            raise ValueError("Ending lot number must be greater than 0")
 
 @qr_labels_bp.route('/')
 def home():
@@ -30,8 +45,8 @@ def generate_labels():
             starting_lot = int(request.form['starting-lot'])
             ending_lot = int(request.form['ending-lot'])
 
-            validate_input(auction_code, starting_lot)
-            validate_input(auction_code, ending_lot)
+            # Single validation call for all inputs
+            validate_label_inputs(auction_code, starting_lot, ending_lot)
 
             logger.info(f"Generating labels for auction {auction_code}, lots {starting_lot}-{ending_lot}")
 
@@ -59,8 +74,8 @@ def generate_labels():
 def generate_sheet(c, auction_code, starting_lot):
     """Generate a single sheet of QR code labels"""
     try:
-        # Validate input
-        validate_input(auction_code, starting_lot)
+        # Validate input for single sheet
+        validate_label_inputs(auction_code, starting_lot)
         
         page_width, page_height = 612, 792
         label_width = 189
@@ -100,6 +115,7 @@ def generate_sheet(c, auction_code, starting_lot):
                 c.setFont("Helvetica", 12)
                 c.drawString(x + 10, y - 10, "www.McLemoreAuction.com")
 
+                # Clean up temporary file
                 os.unlink(temp_file.name)
 
         c.showPage()
