@@ -1,12 +1,15 @@
 import os
 import lob
-import logging
 import pandas as pd
+import logging
 from typing import Dict, List, Optional
+from utils.csv_utils import read_csv_flexibly, CSVReadError
 
 logger = logging.getLogger(__name__)
 
 class LetterGenerator:
+    """Generate letters from processed neighbor data"""
+    
     def __init__(self):
         self.lob_api_key = os.getenv('LOB_API_KEY')
         if not self.lob_api_key:
@@ -27,6 +30,35 @@ class LetterGenerator:
         except Exception as e:
             logger.error(f"Error creating campaign: {str(e)}")
             raise
+
+    def load_data(self, auction_code: str) -> pd.DataFrame:
+        """
+        Load processed neighbor data from CSV
+        
+        Returns:
+            pd.DataFrame: Loaded neighbor data
+            
+        Raises:
+            FileNotFoundError: If data file does not exist
+            CSVReadError: If data file cannot be read
+        """
+        data_file = f'data/processed-neighbors-{auction_code}.csv'
+        
+        if not os.path.exists(data_file):
+            logger.error(f"Data file not found: {data_file}")
+            raise FileNotFoundError(f"No processed data found for auction {auction_code}")
+            
+        try:
+            df = read_csv_flexibly(data_file)
+            logger.info(f"Loaded {len(df)} records from {data_file}")
+            return df
+            
+        except CSVReadError as e:
+            logger.error(f"Error reading data file: {str(e)}")
+            raise
+        except pd.errors.EmptyDataError:
+            logger.error("Data file is empty")
+            raise CSVReadError("No data found in processed file")
 
     def create_creative(self, campaign_id: str, auction_code: str, letter_html: str) -> str:
         """Create a Lob creative for the campaign"""
@@ -56,8 +88,7 @@ class LetterGenerator:
     def create_upload(self, campaign_id: str, auction_code: str) -> str:
         """Create a Lob upload for the campaign using processed CSV"""
         try:
-            # Read processed data
-            df = pd.read_csv(f'data/processed-neighbors-{auction_code}.csv')
+            df = self.load_data(auction_code)
             
             # Format addresses for Lob
             addresses = []

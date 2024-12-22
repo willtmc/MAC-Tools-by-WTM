@@ -5,12 +5,12 @@ import logging
 import traceback
 from typing import Dict
 import io
-import csv
 from datetime import datetime
 from auction_api import AuctionMethodAPI
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import re
+from utils.csv_utils import read_csv_flexibly, CSVReadError
 
 from . import neighbor_letters_bp
 
@@ -139,34 +139,17 @@ def process():
 
         logger.info(f"Processing file for auction {auction_code}")
 
-        # Read CSV file
+        # Read CSV file with flexible encoding detection
         try:
-            # Read the file content once
-            file_content = file.read()
-            
-            # Try different encodings
-            encodings = ['utf-8-sig', 'utf-8', 'latin-1']
-            df = None
-            
-            for encoding in encodings:
-                try:
-                    logger.info(f"Trying to read CSV with {encoding} encoding")
-                    df = pd.read_csv(io.BytesIO(file_content), encoding=encoding)
-                    logger.info(f"Successfully read CSV with {encoding} encoding")
-                    logger.info(f"Columns found: {list(df.columns)}")
-                    break
-                except Exception as e:
-                    logger.warning(f"Failed to read with {encoding}: {str(e)}")
-                    continue
-            
-            if df is None:
-                raise Exception("Could not read CSV file with any supported encoding")
-
+            df = read_csv_flexibly(file)
             logger.info(f"Successfully read CSV with {len(df)} rows")
             
-        except Exception as e:
+        except CSVReadError as e:
             logger.error(f"Error reading CSV: {str(e)}")
             return jsonify({'success': False, 'message': f'Error reading CSV file: {str(e)}. Please check the format.'}), 400
+        except pd.errors.EmptyDataError:
+            logger.error("Empty CSV file provided")
+            return jsonify({'success': False, 'message': 'The CSV file is empty'}), 400
 
         # Process the data
         try:
