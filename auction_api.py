@@ -6,6 +6,7 @@ from typing import Dict, Optional
 from bs4 import BeautifulSoup
 from datetime import datetime
 from requests.exceptions import RequestException, HTTPError, ConnectionError, Timeout
+from config import BASE_API_URL
 
 # Get module logger
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class AuctionMethodAPI:
             logger.error("AM_API_KEY environment variable not set")
             raise ValueError("AM_API_KEY environment variable not set")
         
-        self.base_url = "https://www.mclemoreauction.com/uapi"
+        self.base_url = BASE_API_URL
         self.headers = {
             'X-ApiKey': self.api_key,
             'Content-Type': 'application/json',

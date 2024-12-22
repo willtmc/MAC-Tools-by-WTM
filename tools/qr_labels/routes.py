@@ -5,6 +5,7 @@ import qrcode
 import os
 import tempfile
 import logging
+from config import BASE_AUCTION_URL
 
 from . import qr_labels_bp
 
@@ -98,7 +99,7 @@ def generate_sheet(c, auction_code, starting_lot):
                     box_size=10,
                     border=1,
                 )
-                url = f"https://www.mclemoreauction.com/auction/{auction_code}/lot/{str(lot_number).zfill(4)}"
+                url = f"{BASE_AUCTION_URL}/auction/{auction_code}/lot/{str(lot_number).zfill(4)}"
                 qr.add_data(url)
                 qr.make(fit=True)
                 qr_img = qr.make_image(fill_color="black", back_color="white").resize((45, 45))

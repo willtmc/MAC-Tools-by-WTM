@@ -7,22 +7,28 @@ import io
 import csv
 import os
 from csv_utils import read_csv_flexibly, CSVReadError
-
 from csv_processor import CSVProcessor
 from auction_api import AuctionMethodAPI
 from letter_generator import LetterGenerator
+from config import BASE_AUCTION_URL, BASE_TOOLS_URL
 
 # Get module logger
 logger = logging.getLogger(__name__)
 
-bp = Blueprint('main', __name__)
-
 # Initialize API clients
-auction_api = None
+try:
+    auction_api = AuctionMethodAPI()
+    logger.info("Successfully initialized AuctionMethodAPI")
+except ValueError as e:
+    logger.error(f"Could not initialize AuctionMethodAPI: {str(e)}")
+    auction_api = None
+
 letter_generator = None
 
 def init_apis():
     pass
+
+bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def home():

@@ -13,6 +13,7 @@ import re
 from utils.csv_utils import read_csv_flexibly, CSVReadError
 from utils.auction_utils import extract_manager_info, clean_auction_description
 from csv_processor import CSVProcessor, CSVProcessorError, CSVFormatError
+from config import BASE_AUCTION_URL, SIGNATURE_IMAGE_URL
 
 from . import neighbor_letters_bp
 
@@ -77,7 +78,7 @@ def generate_default_letter(auction_details, auction_date, auction_time, sample_
 
     <p>Based on our research, you own real estate near the property we are selling.</p>
 
-    <p>The auction will take place on our website at <b><a href="https://www.mclemoreauction.com">www.mclemoreauction.com</a></b>. You may register to bid at <b><a href="https://www.mclemoreauction.com/register">www.mclemoreauction.com/register</a></b>.</p>
+    <p>The auction will take place on our website at <b><a href="{BASE_AUCTION_URL}">{BASE_AUCTION_URL}</a></b>. You may register to bid at <b><a href="{BASE_AUCTION_URL}/register">{BASE_AUCTION_URL}/register</a></b>.</p>
 
     <p>Note: <b>This auction closes {bidding_end}.</b></p>
 
@@ -88,7 +89,7 @@ def generate_default_letter(auction_details, auction_date, auction_time, sample_
     <ul class="signature-list">
         <li class="signature-paragraph">
             Yours Truly,<br>
-            <img src="https://tools.mclemoreauction.com/static/images/signature.png" alt="Signature" class="signature-image"><br>
+            <img src="{SIGNATURE_IMAGE_URL}" alt="Signature" class="signature-image"><br>
             <b>Will McLemore, CAI</b><br>
             <b><a href="mailto:will@mclemoreauction.com">will@mclemoreauction.com</a> | (615) 636-9602</b>
         </li>
