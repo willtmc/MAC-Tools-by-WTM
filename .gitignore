@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 tmp/
 *.db
-*.log
 .DS_Store
 backups/
+logs/
+*.log
