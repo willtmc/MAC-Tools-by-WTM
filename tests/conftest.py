@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from io import BytesIO
 from reportlab.pdfgen import canvas
+from unittest.mock import MagicMock
 
 # Add project root to Python path
 project_root = str(Path(__file__).parent.parent)
@@ -27,7 +28,8 @@ def app():
         'TESTING': True,
         'DATABASE': db_path,
         'SERVER_NAME': 'localhost.localdomain',
-        'PREFERRED_URL_SCHEME': 'http'
+        'PREFERRED_URL_SCHEME': 'http',
+        'WTF_CSRF_ENABLED': False  # Disable CSRF for testing
     })
 
     # Other setup can go here
@@ -60,6 +62,19 @@ def pdf_canvas():
     yield c, pdf_buffer
     c.save()
     pdf_buffer.seek(0)
+
+@pytest.fixture
+def mock_auction_api():
+    """Mock AuctionMethodAPI for testing."""
+    mock_api = MagicMock()
+    mock_api.get_auction.return_value = {
+        'title': 'Test Auction',
+        'description': 'Test Description',
+        'location': '123 Test St',
+        'date': '2024-01-01',
+        'time': '12:00 PM'
+    }
+    return mock_api
 
 @pytest.fixture
 def sample_csv_data():
