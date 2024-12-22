@@ -8,7 +8,7 @@ import logging
 
 from . import qr_labels_bp
 
-logging.basicConfig(level=logging.INFO)
+# Get module logger
 logger = logging.getLogger(__name__)
 
 def validate_label_inputs(auction_code: str, starting_lot: int, ending_lot: int = None) -> None:

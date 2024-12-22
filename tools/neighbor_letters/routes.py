@@ -14,8 +14,7 @@ import re
 
 from . import neighbor_letters_bp
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Get module logger
 logger = logging.getLogger(__name__)
 
 # Load environment variables
