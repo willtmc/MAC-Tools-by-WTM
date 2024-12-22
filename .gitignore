@@ -9,3 +9,6 @@ tmp/
 backups/
 logs/
 *.log
+.pytest_cache/
+.coverage
+htmlcov/

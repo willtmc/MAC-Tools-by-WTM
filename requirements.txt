@@ -7,3 +7,8 @@ beautifulsoup4
 pandas
 pytz
 requests
+
+# Testing dependencies
+pytest
+pytest-flask
+pytest-cov
