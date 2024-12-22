@@ -48,8 +48,8 @@ def create_app():
     
     # Register blueprints
     app.register_blueprint(bp)
-    app.register_blueprint(neighbor_letters, url_prefix='/neighbor_letters')
-    app.register_blueprint(qr_labels_bp, url_prefix='/qr_labels')
+    app.register_blueprint(neighbor_letters, url_prefix='/letters')  
+    app.register_blueprint(qr_labels_bp, url_prefix='/labels')  
     
     # Initialize APIs
     init_apis()
