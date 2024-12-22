@@ -22,7 +22,6 @@ Pillow==11.0.0
 # API and Network
 requests>=2.29.0,<3.0.0
 beautifulsoup4==4.12.3
-dropbox>=11.36.2
 lob==4.5.4
 
 # Testing
