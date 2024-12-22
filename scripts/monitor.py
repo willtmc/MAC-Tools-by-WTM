@@ -1,9 +1,18 @@
+"""
+Website monitoring script for McLemore Auction Tools.
+Checks the website periodically and sends email alerts if it's down.
+"""
+
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import requests
 import time
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 URL = "https://tools.mclemoreauction.com"
 CHECK_INTERVAL = 3600
