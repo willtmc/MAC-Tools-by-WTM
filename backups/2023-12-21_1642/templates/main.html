@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>McLemore Auction Tools</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/mclemore.css') }}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <span class="navbar-brand">McLemore Auction Tools</span>
+        </div>
+    </nav>
+
+    <div class="mclemore-container mt-5">
+        <h1 class="mclemore-title">Welcome to McLemore Auction Tools</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mclemore-card">
+                    <div class="mclemore-card-body">
+                        <h2 class="mclemore-subtitle">Auction Labels</h2>
+                        <p class="mclemore-text">Generate QR code labels for auction lots</p>
+                        <a href="/labels" class="mclemore-button mclemore-button-primary">Go to Label Generator</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mclemore-card">
+                    <div class="mclemore-card-body">
+                        <h2 class="mclemore-subtitle">Neighbor Letters</h2>
+                        <p class="mclemore-text">Process and send letters to auction property neighbors</p>
+                        <a href="/letters" class="mclemore-button mclemore-button-primary">Go to Letter System</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

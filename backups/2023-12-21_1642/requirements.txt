@@ -1,0 +1,9 @@
+flask
+python-dotenv
+authlib
+qrcode
+reportlab
+beautifulsoup4
+pandas
+pytz
+requests
