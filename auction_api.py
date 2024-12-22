@@ -30,7 +30,7 @@ class AuctionMethodAPI:
             url = f"{self.base_url}/auction/{auction_code}"
             logger.info(f"Fetching auction details from: {url}")
             
-            response = requests.get(url, headers=self.headers, verify=False)
+            response = requests.get(url, headers=self.headers)
             logger.info(f"Response status code: {response.status_code}")
             
             if response.status_code != 200:
