@@ -1,4 +1,3 @@
-"""Minimal app.py for McLemore Auction Tools."""
 import os
 from flask import Flask, render_template
 from flask_wtf.csrf import CSRFProtect
@@ -9,6 +8,10 @@ from tools.qr_labels.routes import qr_labels_bp
 def create_app(config_override=None):
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_key')
+
+    # If no DATA_FOLDER is set, default to "data" in the project
+    if 'DATA_FOLDER' not in app.config:
+        app.config['DATA_FOLDER'] = os.path.join(os.getcwd(), "data")
     
     if config_override:
         app.config.update(config_override)
@@ -25,11 +28,9 @@ def create_app(config_override=None):
     def index():
         return render_template('index.html')
     
-    # No "main" blueprint is used, so the old "logout" link won't resolve.
-    # If you want a logout route, define it here instead:
+    # Minimal logout stub
     @app.route('/logout')
     def logout():
-        # Minimal logout. Implement however you like or remove the link from base.html
         return render_template('index.html')
 
     return app

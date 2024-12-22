@@ -5,40 +5,85 @@
 {% block content %}
 <div class="mclemore-container">
     <h1 class="mclemore-title">Neighbor Letters</h1>
-    
-    <div class="row">
-        <div class="col-md-12">
-            <div class="mclemore-card">
-                <div class="mclemore-card-header">
-                    <h4 class="mclemore-subtitle mb-0">Instructions</h4>
-                </div>
-                <div class="mclemore-card-body">
-                    <ol>
-                        <li>Upload a CSV file with neighbor addresses (click “Upload Addresses” below).</li>
-                        <li>Create or edit your letter template (manually at /neighbor_letters/edit/AUCTIONCODE).</li>
-                        <li>Preview the letters (manually at /neighbor_letters/preview/AUCTIONCODE).</li>
-                        <li>Send the letters through Lob if desired.</li>
-                    </ol>
-                    <p><strong>Note:</strong> Make sure your CSV file has these columns:</p>
-                    <ul>
-                        <li>name</li>
-                        <li>address_line1</li>
-                        <li>address_city</li>
-                        <li>address_state</li>
-                        <li>address_zip</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+
+    <div class="mclemore-info">
+        <p>Upload a CSV file containing neighbor addresses to generate notification letters.</p>
     </div>
-    
-    <!-- Button linking to the letters.html page for uploading CSV -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <a href="{{ url_for('neighbor_letters.process') }}" class="mclemore-btn mclemore-btn-primary">
-                Upload Addresses
-            </a>
+
+    <!-- Single form for uploading CSV on this same page -->
+    <form id="upload-form" action="{{ url_for('neighbor_letters.process') }}" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mclemore-form-group">
+            <label for="auction_code">Auction Code</label>
+            <input type="text" class="mclemore-form-control" id="auction_code" name="auction_code" required>
         </div>
-    </div>
+        <div class="mclemore-form-group mt-3">
+            <label for="file">CSV File</label>
+            <input type="file" class="mclemore-form-control" id="file" name="file" accept=".csv" required>
+        </div>
+        <button type="submit" class="mclemore-btn mclemore-btn-primary mt-3">Upload</button>
+    </form>
+
+    <div id="results" class="mclemore-info mt-4" style="display: none;"></div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#upload-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(this);
+        
+        $('#results').removeClass('mclemore-error').addClass('mclemore-info')
+            .html('Uploading and processing file...')
+            .show();
+        
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    if (response.stats) {
+                        let s = response.stats;
+                        let html = `
+                            <h4>Success!</h4>
+                            <p>${response.message}</p>
+                            <ul>
+                                <li>Total Rows: ${s.total_rows}</li>
+                                <li>Processed Rows: ${s.processed_rows}</li>
+                                <li>Skipped Rows: ${s.skipped_rows}</li>
+                                <li>Format Detected: ${s.format_detected || 'unknown'}</li>
+                                <li>Cemetery Records Skipped: ${s.cemetery_records_skipped || 0}</li>
+                                <li>Duplicate Rows: ${s.duplicate_rows || 0}</li>
+                            </ul>
+                            <p>Next Step: Edit Letter Template at /neighbor_letters/edit/<strong>${response.auction_code}</strong></p>
+                        `;
+                        $('#results').html(html).show();
+                    } else {
+                        $('#results').html(`<h4>Success!</h4><p>${response.message}</p>`).show();
+                    }
+                } else {
+                    $('#results').removeClass('mclemore-info').addClass('mclemore-error')
+                        .html(`<h4>Error</h4><p>${response.message}</p>`)
+                        .show();
+                }
+            },
+            error: function(xhr) {
+                var message = 'An error occurred while uploading the file.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                $('#results').removeClass('mclemore-info').addClass('mclemore-error')
+                    .html(`<h4>Error</h4><p>${message}</p>`)
+                    .show();
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
