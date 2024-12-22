@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import re
 from utils.csv_utils import read_csv_flexibly, CSVReadError
+from utils.auction_utils import extract_manager_info, clean_auction_description
 
 from . import neighbor_letters_bp
 
@@ -29,41 +30,30 @@ except ValueError as e:
     auction_api = None
 
 def generate_default_letter(auction_details, auction_date, auction_time, sample_address=None):
-    """Generate default letter content with auction details"""
+    """
+    Generate default letter content with auction details
+    
+    Args:
+        auction_details: Dictionary containing auction information
+        auction_date: Formatted auction date string
+        auction_time: Formatted auction time string
+        sample_address: Optional sample address for preview
+        
+    Returns:
+        str: Generated HTML letter content
+    """
     if not auction_details:
         return "Letter content will be generated when auction details are available."
     
     # Format current date
     current_date = datetime.now().strftime('%B %d, %Y')
     
-    # Extract manager info from description if available
-    manager_info = {
-        'name': '',
-        'phone': '',
-        'email': ''
-    }
+    # Extract and validate manager info
     description = auction_details.get('description', '')
-    if 'Auction Manager:' in description:
-        try:
-            manager_section = description.split('Auction Manager:')[1].split('</p>')[0]
-            if '@mclemoreauction.com' in manager_section:
-                manager_info['email'] = manager_section.split('mailto:')[1].split('"')[0]
-            if any(char.isdigit() for char in manager_section):
-                # Extract phone number - assuming format like 731-607-0789
-                import re
-                phone_match = re.search(r'\d{3}[-\s]?\d{3}[-\s]?\d{4}', manager_section)
-                if phone_match:
-                    manager_info['phone'] = phone_match.group()
-            # Extract name - assuming it's between <br/> tags
-            name_match = re.search(r'<br/>(.*?)<br/>', manager_section)
-            if name_match:
-                manager_info['name'] = name_match.group(1).strip()
-        except Exception as e:
-            logger.error(f"Error extracting manager info: {str(e)}")
+    manager = extract_manager_info(description)
     
-    # Clean description - remove HTML and manager section
-    description = auction_details.get('description', '').split('<p><b>Auction Manager:')[0]
-    description = BeautifulSoup(description, 'html.parser').get_text().strip()
+    # Clean description
+    description = clean_auction_description(description)
     
     # Format property address
     property_address = auction_details.get('location', '')
@@ -90,7 +80,7 @@ def generate_default_letter(auction_details, auction_date, auction_time, sample_
 
     <p>Note: <b>This auction closes {bidding_end}.</b></p>
 
-    <p>Please contact <b>{manager_info['name']}</b> at <b>{manager_info['phone']}</b> or <b><a href="mailto:{manager_info['email']}">{manager_info['email']}</a></b> to schedule an appointment to view this property.</p>
+    <p>{manager.format_contact_info()} to schedule an appointment to view this property.</p>
 
     <p><b>Please scan the QR code to visit our website.</b></p>
 
