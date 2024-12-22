@@ -142,9 +142,8 @@ def process():
 
         # Read CSV file
         try:
-            # First try to read the file content
+            # Read the file content once
             file_content = file.read()
-            file.seek(0)  # Reset file pointer
             
             # Try different encodings
             encodings = ['utf-8-sig', 'utf-8', 'latin-1']
