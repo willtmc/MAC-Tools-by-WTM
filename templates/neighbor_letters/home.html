@@ -11,7 +11,8 @@
     </div>
 
     <!-- Single form for uploading CSV on this same page -->
-    <form id="upload-form" action="{{ url_for('neighbor_letters.process') }}" method="POST" enctype="multipart/form-data">
+    <!-- Note the updated action uses 'neighbor_letters.process_csv' instead of 'neighbor_letters.process' -->
+    <form id="upload-form" action="{{ url_for('neighbor_letters.process_csv') }}" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mclemore-form-group">
             <label for="auction_code">Auction Code</label>

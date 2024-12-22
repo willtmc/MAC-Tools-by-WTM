@@ -2,7 +2,7 @@
 import os
 import json
 import pandas as pd
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app
 from csv_processor import CSVProcessor, CSVProcessorError
 from utils.lob_utils import LobClient, Address, LobAPIError
 
@@ -15,8 +15,8 @@ def home():
     """
     return render_template('neighbor_letters/home.html')
 
-@neighbor_letters.route('/process', methods=['POST'])
-def process_csv():
+@neighbor_letters.route('/process', methods=['POST'], endpoint='process_csv')
+def process_csv_file():
     """
     Handle CSV file + parse + store, then return JSON with stats.
     """
