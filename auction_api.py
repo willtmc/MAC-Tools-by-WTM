@@ -43,25 +43,18 @@ class AuctionMethodAPI:
             
         Returns:
             Dict containing formatted auction details
-            
-        Raises:
-            AuctionNotFoundError: If the auction is not found
-            HTTPError: If the API returns an error status code
-            ConnectionError: If there's a network connection error
-            Timeout: If the API request times out
-            json.JSONDecodeError: If the API response is not valid JSON
-            AuctionAPIError: For other API-related errors
         """
         if not auction_code:
             raise ValueError("Auction code cannot be empty")
             
         try:
-            url = f"{self.base_url}/auction/{auction_code}"
+            # Direct URL to auction endpoint
+            url = f"https://www.mclemoreauction.com/uapi/auction/{auction_code}"
             logger.info("Fetching auction details from: %s", url)
             
             try:
                 response = requests.get(url, headers=self.headers, timeout=10)
-                response.raise_for_status()  # Raises HTTPError for bad status codes
+                response.raise_for_status()
             except Timeout:
                 logger.error("Request timed out for auction %s", auction_code)
                 raise
@@ -81,17 +74,12 @@ class AuctionMethodAPI:
                 logger.error("Invalid JSON response for auction %s: %s", auction_code, str(e))
                 raise AuctionAPIError("Invalid API response format") from e
             
-            if data.get('message') != 'success':
-                error_msg = f"API returned error: {data.get('message')}"
-                logger.error(error_msg)
-                raise AuctionAPIError(error_msg)
-            
             # Extract auction data from the response
-            auction_data = data.get('auction', {})
+            auction_data = data
             if not auction_data:
                 raise AuctionNotFoundError(f"No data found for auction {auction_code}")
             
-            # Convert timestamp to date string
+            # Convert timestamp to date string if present
             starts = auction_data.get('starts')
             try:
                 date_str = datetime.fromtimestamp(int(starts)).strftime('%Y-%m-%d') if starts else ''
